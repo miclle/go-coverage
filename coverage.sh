@@ -1,6 +1,8 @@
 #!/bin/sh
 # Generate test coverage statistics for Go packages.
 # Usage: sh coverage.sh --xml
+# default exec: go test -v -covermode=count -coverprofile=.cover/xxx.cover package_name
+# Add go test other args: export GO_TEST_ARGS=-tags=embed
 
 set -e
 
@@ -36,7 +38,7 @@ generate_cover_data() {
 
     for pkg in "$@"; do
         f="$workdir/$(echo $pkg | tr / -).cover"
-        if !(go test -covermode="$mode" -coverprofile="$f" "$pkg"); then
+        if !(go test $GO_TEST_ARGS -covermode="$mode" -coverprofile="$f" "$pkg"); then
             exit_count=`expr $exit_count + 1`
         fi
     done
