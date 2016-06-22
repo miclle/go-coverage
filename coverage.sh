@@ -1,8 +1,9 @@
 #!/bin/sh
 # Generate test coverage statistics for Go packages.
-# Usage: sh coverage.sh --xml
+# Usage: sh coverage.sh --xml --html
 # default exec: go test -v -covermode=count -coverprofile=.cover/xxx.cover package_name
 # Add go test other args: export GO_TEST_ARGS=-tags=embed
+# Except packages like this: export EXCEPT_PKGS="github.com/miclle/pkgs"
 
 set -e
 
@@ -65,14 +66,26 @@ generate_html_report(){
     gocov convert "$profile" | gocov-html > coverage.html
 }
 
-generate_cover_data $(go list ./...)
-    case "$1" in
-        "")
-           ;;
-        --html )
-          generate_html_report  ;;
-        --xml )
-          generate_xml_report  ;;
-          *)
-        echo >&2 "error:invalid option:$1"; exit 1;;
-    esac
+generate_coverage(){
+    if [ -n "$EXCEPT_PKGS" ]; then
+        echo "except packages:" $EXCEPT_PKGS
+        generate_cover_data $(go list ./... | grep -Ev $EXCEPT_PKGS)
+    else
+        generate_cover_data $(go list ./...)
+    fi
+
+    for arg in "$@"; do
+        case "$arg" in
+            "")
+               ;;
+            --html )
+              generate_html_report  ;;
+            --xml )
+              generate_xml_report  ;;
+              *)
+            echo >&2 "error:invalid option:$1"; exit 1;;
+        esac
+    done
+}
+
+generate_coverage $@
