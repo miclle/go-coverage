@@ -45,7 +45,6 @@ generate_cover_data() {
     exit_count=0
 
     for pkg in "$@"; do
-        dividing
         f="$workdir/$(echo $pkg | tr / -).cover"
         if !(go test $GO_TEST_ARGS -covermode="$mode" -coverprofile="$f" "$pkg"); then
             exit_count=`expr $exit_count + 1`
@@ -80,12 +79,14 @@ generate_html_report(){
     go get github.com/axw/gocov/gocov
 	go get gopkg.in/matm/v1/gocov-html
     gocov convert "$profile" | gocov-html > coverage.html
+    dividing
     stats_coverage
 }
 
 generate_coverage(){
     if [ -n "$EXCEPT_PKGS" ]; then
         echo "except packages:" $EXCEPT_PKGS
+        dividing
         generate_cover_data $(go list ./... | grep -Ev $EXCEPT_PKGS)
     else
         generate_cover_data $(go list ./...)
