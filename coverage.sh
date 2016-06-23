@@ -12,6 +12,11 @@ profile="$workdir/cover.out"
 mode=count
 temp_test_file_name="temp_coverage_test.go"
 
+dividing(){
+    i=1; while [ $i -le 80 ]; do printf "-"; i=$((i+1)); done
+    printf "\n"
+}
+
 add_temp_test_file_to_dir() {
     for file in `find $1 -name "*.go"`; do
         pkgname=$(cat $file | grep "^package " | awk 'NR==1{print $2}')
@@ -24,7 +29,9 @@ clean_and_check_exit(){
     find `pwd` -name "*$temp_test_file_name" | xargs rm
     if [ $1 != 0 ]; then
         rm -rf "$workdir"
+        dividing
         echo "Have $1 errors, then exit!"
+        dividing
         exit 1
     fi
 }
@@ -38,6 +45,7 @@ generate_cover_data() {
     exit_count=0
 
     for pkg in "$@"; do
+        dividing
         f="$workdir/$(echo $pkg | tr / -).cover"
         if !(go test $GO_TEST_ARGS -covermode="$mode" -coverprofile="$f" "$pkg"); then
             exit_count=`expr $exit_count + 1`
@@ -60,10 +68,19 @@ generate_xml_report(){
     gocov convert "$profile" | gocov-xml > coverage.xml
 }
 
+stats_coverage() {
+  printf "\n%-17s Code Coverage Stats\n"
+  dividing
+  cat coverage.html | grep "^<tr id=\"s_pkg_" | awk -F '[><]' '{printf "%-40s %-10s %-10s \n", $9, $19, $27}'
+  dividing
+  cat coverage.html | grep "^<tr><td><code>Report Total</code>" | awk -F '["><"]' '{printf "%-40s %-10s %-10s \n", "Report Total", $17, $27}'
+}
+
 generate_html_report(){
     go get github.com/axw/gocov/gocov
 	go get gopkg.in/matm/v1/gocov-html
     gocov convert "$profile" | gocov-html > coverage.html
+    stats_coverage
 }
 
 generate_coverage(){
